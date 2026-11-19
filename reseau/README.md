@@ -16,9 +16,9 @@ Les flux entre VLAN internes ne passent pas par le pare-feu : chaque VM a une ca
 
 ## Adressage
 
-Une VM garde le meme dernier octet dans tous ses VLAN. Les IP sont fixees par netplan (`netplan/`, copie de `/etc/netplan/60-sirius.yaml`).
+Une VM garde le meme dernier octet dans tous ses VLAN. Les IP sont fixees par netplan (`netplan/`, copie de `/etc/netplan/60-sirius.yaml`). La carte ens192 porte la passerelle par defaut et le DNS : OPNsense, en 10.20.x.1 dans son VLAN.
 
-| VM | ens192 | ens224 | ens256 |
+| VM | ens192 (passerelle) | ens224 | ens256 |
 |---|---|---|---|
 | cc-vm-rp | APP 10.20.10.10 | ADMIN 10.20.30.10 | |
 | cc-vm-sec | APP 10.20.10.11 | ADMIN 10.20.30.11 | |
@@ -30,28 +30,11 @@ Une VM garde le meme dernier octet dans tous ses VLAN. Les IP sont fixees par ne
 | cc-vm-logs | ADMIN 10.20.30.31 | | |
 | cc-vm-mocks | MOCKS 10.20.40.40 | ADMIN 10.20.30.40 | |
 
-La carte 1 (ens160) de chaque VM est encore sur le reseau de l'ecole, en DHCP : elle sert de passerelle en attendant le passage par OPNsense.
+### Reseau de l'ecole (LAN)
 
-### Réseau de l'école (LAN)
+Chaque VM garde une premiere carte `ens160` sur le LAN de l'ecole (172.31.248.0/21, DHCP), mais cette carte est debranchee dans vSphere sur les 9 VM depuis la bascule du 19/11 : elles ne sont plus joignables par le reseau de l'ecole.
 
-Chaque VM possède une première interface réseau `ens160`, connectée au LAN de l'école. Son adresse IP est attribuée automatiquement par DHCP. Ces adresses permettent notamment l'accès aux VM depuis le VPN de l'école.
-
-| VM | Interface | Adresse IP (LAN école) |
-|---|---|---|
-| `cc-vm-rp` | `ens160` | `172.31.252.201` |
-| `cc-vm-sec` | `ens160` | `172.31.253.82` |
-| `cc-vm-app` | `ens160` | `172.31.253.19` |
-| `cc-vm-db` | `ens160` | `172.31.249.168` |
-| `cc-vm-bus` | `ens160` | `172.31.252.23` |
-| `cc-vm-data` | `ens160` | `172.31.250.254` |
-| `cc-vm-cicd` | `ens160` | `172.31.252.214` |
-| `cc-vm-logs` | `ens160` | `172.31.252.93` |
-| `cc-vm-mocks` | `ens160` | `172.31.252.56` |
-
-La VM `cc-vm-fw` (OPNsense) dispose également d'une interface WAN sur le LAN de l'école. Elle reçoit l'adresse `172.31.250.211` par DHCP.
-
-Les adresses du LAN de l'école sont attribuées par DHCP et peuvent donc évoluer selon les baux délivrés par le serveur DHCP.
-
+Seule `cc-vm-fw` (OPNsense) reste branchee sur ce LAN, par son WAN en `172.31.250.211` (DHCP). C'est le seul point d'entree vers les VLAN : SSH par le bastion et interfaces web par les redirections (voir plus bas).
 
 ## Pare-feu OPNsense (cc-vm-fw)
 
@@ -69,9 +52,39 @@ Regles :
 |---|---|---|---|---|
 | WAN | 172.31.240.0/21 (VPN ecole) | This Firewall | TCP 443 | Pass |
 | WAN | WAN net (reseau ecole) | This Firewall | TCP 443 | Pass |
+| WAN | any | 10.20.30.30 | TCP 22 | Pass (bastion) |
+| WAN | any | 10.20.10.10 | TCP 80 | Pass (Nginx) |
+| WAN | any | 10.20.10.14 | TCP 15672 | Pass (RabbitMQ) |
+| WAN | any | 10.20.30.31 | TCP 8080 | Pass (Dozzle) |
+| WAN | any | 10.20.20.20 | TCP 27017 | Pass (MongoDB) |
+| WAN | any | 10.20.20.20 | TCP 5432 | Pass (datamart) |
 | ADMIN | ADMIN net | any | any | Pass |
 | APP | APP net | any | any | Pass |
 | DONNEES | DONNEES net | any | any | Pass |
 | MOCKS | MOCKS net | any | any | Pass |
 
 Sur le WAN, "Block private networks" et "Block bogon networks" sont decoches (le reseau de l'ecole est en adresses privees). NAT sortant automatique.
+
+## Redirections (Destination NAT sur le WAN)
+
+Seule entree depuis l'ecole : l'IP WAN d'OPNsense, 172.31.250.211. Chaque redirection vise l'IP de la carte qui porte la passerelle de la VM (sinon la reponse repartirait par un autre chemin).
+
+| Port WAN | Vers | Service |
+|---|---|---|
+| 2222 | 10.20.30.30:22 | SSH du bastion (cc-vm-cicd) |
+| 80 | 10.20.10.10:80 | Nginx |
+| 15672 | 10.20.10.14:15672 | RabbitMQ management |
+| 8080 | 10.20.30.31:8080 | Dozzle |
+| 27017 | 10.20.20.20:27017 | MongoDB |
+| 5432 | 10.20.20.20:5432 | PostgreSQL datamart |
+
+Les ports non standard sont declares en alias de type Port(s) : `BASTION_SSH` (2222), `RABBITMQ_UI` (15672), `DOZZLE` (8080), `MONGODB` (27017), `POSTGRES` (5432), `MQTT` (1883).
+
+## Acces SSH
+
+```
+ssh -p 2222 sirius@172.31.250.211                          # bastion cc-vm-cicd
+ssh -J sirius@172.31.250.211:2222 sirius@10.20.30.14       # saut direct vers une VM (ici vm-bus)
+```
+
+Depuis cc-vm-cicd, une cle SSH donne acces aux autres VM par leur IP ADMIN (10.20.30.x).
