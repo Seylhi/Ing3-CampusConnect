@@ -3,6 +3,11 @@ network:
   ethernets:
     ens192:
       addresses: [10.20.10.14/24]
+      routes:
+        - to: default
+          via: 10.20.10.1
+      nameservers:
+        addresses: [10.20.10.1]
     ens224:
       addresses: [10.20.20.14/24]
     ens256:
