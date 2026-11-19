@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: postgres-dm
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      ETL_PASSWORD: ${ETL_PASSWORD}
+      POWERBI_PASSWORD: ${POWERBI_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+volumes:
+  pgdata:

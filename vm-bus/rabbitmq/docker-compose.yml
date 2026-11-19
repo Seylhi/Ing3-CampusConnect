@@ -1,0 +1,18 @@
+services:
+  rabbitmq:
+    image: rabbitmq:4-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"     # AMQP (micro-services, ingestion)
+      - "1883:1883"     # MQTT (simulateurs)
+      - "15672:15672"   # interface web
+    environment:
+      RABBITMQ_DEFAULT_USER: sirius
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
+    volumes:
+      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins:ro
+      - rabbitmq-data:/var/lib/rabbitmq
+volumes:
+  rabbitmq-data:

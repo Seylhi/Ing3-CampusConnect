@@ -1,0 +1,7 @@
+services:
+  ingestion:
+    build: .
+    container_name: ingestion
+    restart: unless-stopped
+    network_mode: host   # RabbitMQ sur 10.20.20.14 (VLAN DONNEES), MongoDB sur localhost
+    env_file: .env

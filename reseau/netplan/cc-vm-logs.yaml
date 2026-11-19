@@ -1,0 +1,5 @@
+network:
+  version: 2
+  ethernets:
+    ens192:
+      addresses: [10.20.30.31/24]

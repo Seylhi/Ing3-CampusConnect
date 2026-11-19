@@ -1,0 +1,8 @@
+services:
+  gestion-acces:
+    image: traefik/whoami
+    container_name: gestion-acces
+    restart: unless-stopped
+    command: --port 8081 --name gestion-acces
+    ports:
+      - "10.20.10.12:8081:8081"   # joignable uniquement sur le VLAN APP

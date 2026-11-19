@@ -1,0 +1,12 @@
+# A lancer sur chaque VM qui fait tourner des conteneurs (rp, app, db, bus, data).
+# L'agent n'ecoute que sur l'IP ADMIN de la VM (fichier .env).
+services:
+  dozzle-agent:
+    image: amir20/dozzle:latest
+    container_name: dozzle-agent
+    restart: unless-stopped
+    command: agent
+    ports:
+      - "${ADMIN_IP}:7007:7007"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro

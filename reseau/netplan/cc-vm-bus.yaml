@@ -1,0 +1,9 @@
+network:
+  version: 2
+  ethernets:
+    ens192:
+      addresses: [10.20.10.14/24]
+    ens224:
+      addresses: [10.20.20.14/24]
+    ens256:
+      addresses: [10.20.30.14/24]
