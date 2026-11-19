@@ -24,7 +24,7 @@ Plateforme de campus connecte : acces par badge, reservation de salles, capteurs
 | cc-vm-app | APP | 10.20.10.12 | gestion-acces (service de test) |
 | cc-vm-db | APP | 10.20.10.13 | PostgreSQL |
 | cc-vm-bus | APP + DONNEES | 10.20.10.14 / 10.20.20.14 | RabbitMQ + MQTT |
-| cc-vm-data | DONNEES | 10.20.20.20 | ingestion, MongoDB (data lake), PostgreSQL (staging, datamart) |
+| cc-vm-data | DONNEES | 10.20.20.20 | ingestion, RustFS (data lake S3), PostgreSQL (staging, datamart) |
 | cc-vm-cicd | ADMIN | 10.20.30.30 | CI/CD (a venir) |
 | cc-vm-logs | ADMIN | 10.20.30.31 | Dozzle (logs de toutes les VM) |
 | cc-vm-mocks | MOCKS | 10.20.40.40 | simulateurs |
@@ -41,7 +41,7 @@ Tout passe par OPNsense (172.31.250.211) :
 | Reverse proxy | `http://172.31.250.211` et `http://172.31.250.211/api/acces/` |
 | RabbitMQ | `http://172.31.250.211:15672` |
 | Logs (Dozzle) | `http://172.31.250.211:8080` |
-| Data lake (Compass) | `mongodb://sirius:<mdp>@172.31.250.211:27017/?authSource=admin` |
+| Data lake (console RustFS) | `http://172.31.250.211:9001` |
 | Datamart (Power BI) | `172.31.250.211:5432`, base `datamart`, utilisateur `powerbi` |
 | OPNsense | `https://172.31.250.211` |
 
@@ -59,8 +59,8 @@ vm-app/collectors/         collector-badges, collector-comptage, collector-capte
 vm-db/postgresql/          bases bdd_acces et bdd_reservations, un utilisateur par base
 vm-bus/rabbitmq/           RabbitMQ avec les plugins management et MQTT, script de creation des files
 vm-data/collecte-externe/  open data (a venir)
-vm-data/ingestion/         file datalake -> MongoDB raw (un document par message)
-vm-data/datalake/          MongoDB, bases raw et curated
+vm-data/ingestion/         file datalake -> bucket raw (fichiers JSON Lines par source et par date)
+vm-data/datalake/          RustFS (stockage objet S3), buckets raw et curated
 vm-data/spark/             traitements raw -> curated -> staging (a venir)
 vm-data/postgresql/        bases staging et datamart (utilisateurs etl et powerbi)
 vm-cicd/ansible/           deploiement automatise (a venir)
@@ -75,7 +75,7 @@ vm-mocks/                  simulateurs MQTT de badges et de capteurs
 simulateurs (vm-mocks) --MQTT--> RabbitMQ (vm-bus), exchange amq.topic
     badges.#   -> file badges   (collectors de vm-app, a venir)
     capteurs.# -> file capteurs (collectors de vm-app, a venir)
-    badges.# + capteurs.# -> file datalake -> ingestion (vm-data) -> MongoDB raw
+    badges.# + capteurs.# -> file datalake -> ingestion (vm-data) -> RustFS, bucket raw
 ```
 
 ## Lancer un service
@@ -94,4 +94,17 @@ Les fichiers `.env` ne sont pas versionnes.
 
 Apres le premier demarrage de RabbitMQ : `./init-files.sh` dans `rabbitmq/` pour creer les files.
 Dozzle demande un compte : avant `docker compose up -d`, generer `users.yml` dans `dozzle/` avec `docker run --rm amir20/dozzle generate sirius --password <mdp> --name SIRIUS > users.yml`.
-Les scripts `init/` de PostgreSQL et MongoDB s'executent seuls au premier demarrage (volume vide).
+Les scripts `init/` de PostgreSQL s'executent seuls au premier demarrage (volume vide). Les buckets raw et curated sont crees par l'ingestion a son demarrage.
+
+## Verifier
+
+| Quoi | Commande |
+|---|---|
+| Reverse proxy | `curl http://172.31.250.211/api/acces/` puis `docker logs -f nginx` sur vm-rp |
+| Bases | `docker exec -it postgres psql -U admin -c '\l'` sur vm-db |
+| Bus | interface web `http://172.31.250.211:15672`, onglet Queues |
+| Message MQTT | sur vm-mocks : `sudo apt install -y python3-paho-mqtt` puis `MQTT_PASS=<mdp> python3 simulateur-badges.py` (ou `simulateur-capteurs.py`) |
+| Ingestion | `docker logs -f ingestion` sur vm-data |
+| Data lake | console `http://172.31.250.211:9001`, bucket raw, ou `docker logs -f ingestion` sur vm-data (lignes `depose : s3://raw/...`) |
+| Staging / datamart | `docker exec -it postgres-dm psql -U admin -c '\l'` sur vm-data |
+| Logs | interface web `http://172.31.250.211:8080` |
