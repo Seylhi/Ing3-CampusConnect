@@ -16,18 +16,18 @@ Plateforme de campus connecte : acces par badge, reservation de salles, capteurs
 
 10 VM sur l'hote esx4 (vSphere ESIPE), dossier `CampusConnect/Sirius3`. Nom de la VM = hostname = `cc-vm-<role>`.
 
-| VM | VLAN | IP | Service en place |
-|---|---|---|---|
-| cc-vm-fw | WAN + 4 VLAN | 10.20.x.1 | OPNsense |
-| cc-vm-rp | APP | 10.20.10.10 | Nginx |
-| cc-vm-sec | APP | 10.20.10.11 | Keycloak (a venir) |
-| cc-vm-app | APP | 10.20.10.12 | gestion-acces (service de test) |
-| cc-vm-db | APP | 10.20.10.13 | PostgreSQL |
-| cc-vm-bus | APP + DONNEES | 10.20.10.14 / 10.20.20.14 | RabbitMQ + MQTT |
-| cc-vm-data | DONNEES | 10.20.20.20 | ingestion, MongoDB (data lake), PostgreSQL (staging, datamart) |
-| cc-vm-cicd | ADMIN | 10.20.30.30 | CI/CD (a venir) |
-| cc-vm-logs | ADMIN | 10.20.30.31 | Dozzle (logs de toutes les VM) |
-| cc-vm-mocks | MOCKS | 10.20.40.40 | simulateurs |
+| VM | IP réseau école | VLAN | IP | Service en place |
+|---|---|---|---|---|
+| cc-vm-fw | 172.31.250.211 (WAN) | APP / DONNEES / ADMIN / MOCKS | 10.20.10.1 / 10.20.20.1 / 10.20.30.1 / 10.20.40.1 | OPNsense |
+| cc-vm-rp | 172.31.252.201 | APP | 10.20.10.10 | Nginx |
+| cc-vm-sec | 172.31.253.82 | APP | 10.20.10.11 | Keycloak (a venir) |
+| cc-vm-app | 172.31.253.19 | APP | 10.20.10.12 | gestion-acces (service de test) |
+| cc-vm-db | 172.31.249.168 | APP | 10.20.10.13 | PostgreSQL |
+| cc-vm-bus | 172.31.252.23 | APP + DONNEES | 10.20.10.14 / 10.20.20.14 | RabbitMQ + MQTT |
+| cc-vm-data | 172.31.250.254 | DONNEES | 10.20.20.20 | ingestion, MongoDB (data lake), PostgreSQL (staging, datamart) |
+| cc-vm-cicd | 172.31.252.214 | ADMIN | 10.20.30.30 | CI/CD (a venir) |
+| cc-vm-logs | 172.31.252.93 | ADMIN | 10.20.30.31 | Dozzle (logs de toutes les VM) |
+| cc-vm-mocks | 172.31.252.56 | MOCKS | 10.20.40.40 | simulateurs |
 
 Reseau, VLAN et pare-feu : `reseau/README.md`.
 
