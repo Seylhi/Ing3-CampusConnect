@@ -8,8 +8,11 @@ services:
     environment:
       # agents des VM qui font tourner des conteneurs, joints par le VLAN ADMIN
       DOZZLE_REMOTE_AGENT: 10.20.30.10:7007,10.20.30.12:7007,10.20.30.13:7007,10.20.30.14:7007,10.20.30.20:7007
+      # connexion obligatoire, comptes dans users.yml (non versionne)
+      DOZZLE_AUTH_PROVIDER: simple
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      - dozzle-data:/data   # comptes et parametres de Dozzle
+      - dozzle-data:/data   # parametres de Dozzle
+      - ./users.yml:/data/users.yml
 volumes:
   dozzle-data:
