@@ -3,5 +3,5 @@ services:
     build: .
     container_name: ingestion
     restart: unless-stopped
-    network_mode: host   # RabbitMQ sur 10.20.20.14 (VLAN DONNEES), MongoDB sur localhost
+    network_mode: host   # RabbitMQ sur 10.20.20.14 (VLAN DONNEES), RustFS sur localhost
     env_file: .env

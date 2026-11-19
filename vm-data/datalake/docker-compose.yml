@@ -1,15 +1,19 @@
 services:
-  mongo:
-    image: mongo:8
-    container_name: mongo
+  rustfs:
+    image: rustfs/rustfs:1.0.0
+    container_name: rustfs
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "9000:9000"   # API S3 (ingestion, Spark)
+      - "9001:9001"   # console web
     environment:
-      MONGO_INITDB_ROOT_USERNAME: sirius
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+      RUSTFS_CONSOLE_ENABLE: "true"
+      RUSTFS_ACCESS_KEY: sirius
+      RUSTFS_SECRET_KEY: ${RUSTFS_SECRET_KEY}
     volumes:
-      - mongo-data:/data/db
-      - ./init:/docker-entrypoint-initdb.d:ro
+      - rustfs-data:/data
 volumes:
-  mongo-data:
+  rustfs-data:

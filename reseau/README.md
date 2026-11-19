@@ -56,7 +56,7 @@ Regles :
 | WAN | any | 10.20.10.10 | TCP 80 | Pass (Nginx) |
 | WAN | any | 10.20.10.14 | TCP 15672 | Pass (RabbitMQ) |
 | WAN | any | 10.20.30.31 | TCP 8080 | Pass (Dozzle) |
-| WAN | any | 10.20.20.20 | TCP 27017 | Pass (MongoDB) |
+| WAN | any | 10.20.20.20 | TCP 9001 | Pass (console RustFS) |
 | WAN | any | 10.20.20.20 | TCP 5432 | Pass (datamart) |
 | ADMIN | ADMIN net | any | any | Pass |
 | APP | APP net | any | any | Pass |
@@ -75,10 +75,10 @@ Seule entree depuis l'ecole : l'IP WAN d'OPNsense, 172.31.250.211. Chaque redire
 | 80 | 10.20.10.10:80 | Nginx |
 | 15672 | 10.20.10.14:15672 | RabbitMQ management |
 | 8080 | 10.20.30.31:8080 | Dozzle |
-| 27017 | 10.20.20.20:27017 | MongoDB |
+| 9001 | 10.20.20.20:9001 | console RustFS (data lake) |
 | 5432 | 10.20.20.20:5432 | PostgreSQL datamart |
 
-Les ports non standard sont declares en alias de type Port(s) : `BASTION_SSH` (2222), `RABBITMQ_UI` (15672), `DOZZLE` (8080), `MONGODB` (27017), `POSTGRES` (5432), `MQTT` (1883).
+Les ports non standard sont declares en alias de type Port(s) : `BASTION_SSH` (2222), `RABBITMQ_UI` (15672), `DOZZLE` (8080), `RUSTFS_CONSOLE` (9001), `POSTGRES` (5432), `MQTT` (1883).
 
 ## Acces SSH
 
